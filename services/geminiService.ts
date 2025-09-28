@@ -1,127 +1,133 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Character, BattleLogEntry, AIAction, Ability } from '../types';
+import { Character, EnemyIntent, Ability } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+if (!process.env.API_KEY) {
+  console.warn("API_KEY environment variable not found. The app may not function correctly.");
+}
 
-const statusEffectSchema = {
-    type: Type.OBJECT,
-    properties: {
-        type: { type: Type.STRING, enum: ['Stun', 'Corrosion', 'Weaken'] },
-        chance: { type: Type.NUMBER, description: "Chance to apply, from 0.1 to 1.0" },
-        duration: { type: Type.INTEGER, description: "Duration in turns, from 1 to 3" },
-    },
-    required: ['type', 'chance', 'duration'],
-};
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-const characterSchema = {
-    type: Type.OBJECT,
-    properties: {
-        name: { type: Type.STRING, description: "The enemy's cool and thematic name, like 'Glitch Fiend' or 'Data Drake'." },
-        hp: { type: Type.INTEGER, description: "The enemy's health points. Between 80 and 200." },
-        attack: { type: Type.INTEGER, description: "The enemy's attack power. Between 10 and 25." },
-        defense: { type: Type.INTEGER, description: "The enemy's defense power. Between 5 and 20." },
-        speed: { type: Type.INTEGER, description: "The enemy's speed. Between 10 and 40." },
-        imagePrompt: { type: Type.STRING, description: "A creative, detailed prompt for an image generator. Style: vibrant, colorful, synthwave-style robot. e.g., 'A menacing robot serpent made of neon green code, glitching in a dark cyberspace, synthwave art'." },
-        abilities: {
-            type: Type.ARRAY,
-            description: "A list of 1 or 2 unique and thematic abilities for the character.",
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    name: { type: Type.STRING, description: "The name of the ability, e.g., 'Static Shock'." },
-                    description: { type: Type.STRING, description: "A brief description of the ability." },
-                    damage: { type: Type.INTEGER, description: "Base damage. 0 if it's a pure status move." },
-                    cooldown: { type: Type.INTEGER, description: "Cooldown in turns after use." },
-                    statusEffect: { ...statusEffectSchema, description: "Optional status effect this ability can apply." },
-                },
-                required: ["name", "description", "damage", "cooldown"],
+const generateEnemySchema = {
+  type: Type.OBJECT,
+  properties: {
+    name: { type: Type.STRING, description: "The enemy's creative and thematic name." },
+    hp: { type: Type.NUMBER, description: "The enemy's health points, between 100 and 300." },
+    attack: { type: Type.NUMBER, description: "The enemy's attack power, between 15 and 40." },
+    defense: { type: Type.NUMBER, description: "The enemy's defense value, between 5 and 25." },
+    speed: { type: Type.NUMBER, description: "The enemy's speed, determining turn order, between 10 and 30." },
+    abilities: {
+      type: Type.ARRAY,
+      description: "A list of 1 to 2 unique abilities the enemy possesses.",
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING, description: "The ability's cool, thematic name." },
+          description: { type: Type.STRING, description: "A brief description of the ability's effect." },
+          damage: { type: Type.NUMBER, description: "The base damage of the ability. Can be 0 for status-only moves. Range: 0 to 50." },
+          cooldown: { type: Type.NUMBER, description: "The number of turns the enemy must wait before using this ability again. Range: 2 to 5." },
+          statusEffect: {
+            type: Type.OBJECT,
+            description: "An optional status effect the ability can apply.",
+            properties: {
+              type: { type: Type.STRING, description: "The type of status effect: 'Stun', 'Corrosion' (damage over time), or 'Weaken' (reduces attack)." },
+              chance: { type: Type.NUMBER, description: "The probability (0.0 to 1.0) of the status effect being applied." },
+              duration: { type: Type.NUMBER, description: "The number of turns the status effect lasts. Range: 1 to 3." },
             },
+          },
         },
+        required: ["name", "description", "damage", "cooldown"],
+      },
     },
-    required: ["name", "hp", "attack", "defense", "speed", "imagePrompt", "abilities"],
+    imagePrompt: { type: Type.STRING, description: "A detailed prompt to generate a portrait of this enemy. The style should be 'cyberspace arena, synthwave art style'." },
+  },
+  required: ["name", "hp", "attack", "defense", "speed", "abilities", "imagePrompt"],
 };
 
-
-export const generateEnemyCharacter = async (): Promise<Omit<Character, 'hp' | 'isDefending' | 'statusEffects' | 'level'|'xp'|'xpToNextLevel'|'coins'|'potions'>> => {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: 'Generate a unique and challenging synthwave-themed robot enemy for a turn-based RPG battle. The player is a "Code Warrior".',
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: characterSchema,
-      temperature: 1,
-    },
-  });
-
-  const characterData = JSON.parse(response.text);
-
-  return {
-      ...characterData,
-      maxHp: characterData.hp,
-      imageUrl: characterData.imagePrompt,
-      abilities: characterData.abilities.map((a: Omit<Ability, 'currentCooldown'>) => ({...a, currentCooldown: 0 }))
-  };
-};
-
-const aiActionSchema = {
+const getEnemyActionAndIntentSchema = {
     type: Type.OBJECT,
     properties: {
-        action: { type: Type.STRING, enum: ['attack', 'defend', 'use_ability'] },
-        abilityName: { type: Type.STRING, description: "Required if action is 'use_ability'. Must be an available, off-cooldown ability." },
-        narration: { type: Type.STRING, description: "A short, dramatic narration for the action from the enemy's perspective." }
-    },
-    required: ["action", "narration"],
-};
-
-export const getEnemyAction = async (enemy: Character, player: Character, battleLog: BattleLogEntry[]): Promise<AIAction> => {
-    const availableAbilities = enemy.abilities.filter(a => a.currentCooldown === 0);
-    const playerStatus = player.statusEffects.length > 0 ? `Player is affected by: ${player.statusEffects.map(s => s.type).join(', ')}.` : 'Player has no status effects.';
-    
-    const prompt = `
-    You are the AI for an enemy in a turn-based RPG. Your character is ${enemy.name}.
-    Your current stats: HP=${enemy.hp}/${enemy.maxHp}. Your status effects: ${enemy.statusEffects.map(s => s.type).join(', ') || 'None'}.
-    Your available abilities: ${availableAbilities.length > 0 ? availableAbilities.map(a => `${a.name} (Cooldown: ${a.cooldown})`).join(', ') : 'None'}.
-    The player is ${player.name} with ${player.hp}/${player.maxHp} HP. ${playerStatus}
-    The player is currently ${player.isDefending ? 'defending' : 'not defending'}.
-    
-    Recent battle events:
-    ${battleLog.slice(-5).map(log => `Turn ${log.turn}: ${log.message}`).join('\n')}
-
-    Based on this situation, decide your next move.
-    - If my HP is low, defending or using a healing/utility ability is wise.
-    - If the player is defending, a standard attack is weak. An ability that applies a status effect (like Corrosion) is a good choice.
-    - If I have a powerful ability off cooldown (like Stun), it's a great time to use it to gain an advantage.
-    - I MUST NOT use an ability that is on cooldown. If I choose 'use_ability', I MUST pick a valid abilityName.
-    
-    Choose one action: 'attack', 'defend', or 'use_ability'.
-    Provide a short, dramatic narration for the action.
-    `;
-    
-    const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: aiActionSchema,
-            temperature: 0.9,
-            thinkingConfig: { thinkingBudget: 0 } 
-        },
-    });
-
-    return JSON.parse(response.text);
-};
-
-export const generateImage = async (prompt: string): Promise<string> => {
-    const response = await ai.models.generateImages({
-        model: 'imagen-4.0-generate-001',
-        prompt: prompt,
-        config: {
-            numberOfImages: 1,
-            aspectRatio: '1:1',
-            outputMimeType: 'image/png'
+        action: { type: Type.STRING, description: "The action to take this turn: 'attack' or 'ability'."},
+        abilityIndex: { type: Type.NUMBER, description: "The index of the ability to use, if action is 'ability'. Otherwise, -1."},
+        nextTurnIntent: {
+            type: Type.OBJECT,
+            description: "The intended action for the NEXT turn.",
+            properties: {
+                type: { type: Type.STRING, description: "The type of intent: 'attack', 'heavy_attack', 'defend', or 'debuff'." },
+                description: { type: Type.STRING, description: "A brief player-facing description of the intent, e.g., 'Preparing a powerful strike!'" }
+            },
+            required: ["type", "description"]
         }
-    });
+    },
+    required: ["action", "abilityIndex", "nextTurnIntent"]
+};
 
-    const base64ImageBytes = response.generatedImages[0].image.imageBytes;
-    return `data:image/png;base64,${base64ImageBytes}`;
+export const generateEnemy = async (playerLevel: number): Promise<Omit<Character, 'imageUrl'>> => {
+  try {
+    const prompt = `Generate a unique and challenging enemy for a level ${playerLevel} player in a futuristic, cyberspace-themed RPG. The enemy should be a rogue AI, a glitch monster, or a corrupted data entity.`;
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: { responseMimeType: "application/json", responseSchema: generateEnemySchema, temperature: 0.9, },
+    });
+    const enemyData = JSON.parse(response.text);
+    return {
+      ...enemyData, maxHp: enemyData.hp, isDefending: false, statusEffects: [],
+      abilities: enemyData.abilities.map((ab: any) => ({ ...ab, currentCooldown: 0 })),
+      level: playerLevel, xp: 0, xpToNextLevel: 0, coins: 0, potions: 0,
+    };
+  } catch (error) {
+    console.error("Error generating enemy:", error);
+    return {
+      name: 'Fallback Glitch', hp: 100, maxHp: 100, attack: 15, defense: 5, speed: 10,
+      isDefending: false, statusEffects: [], abilities: [{ name: 'Crash', description: 'A simple attack.', damage: 10, cooldown: 0, currentCooldown: 0 }],
+      level: playerLevel, xp: 0, xpToNextLevel: 0, coins: 0, potions: 0,
+    };
+  }
+};
+
+export const getEnemyActionAndIntent = async (enemy: Character, player: Character): Promise<{ action: 'attack' | 'ability', abilityIndex: number, nextTurnIntent: EnemyIntent }> => {
+    const availableAbilities = enemy.abilities.map((ab, i) => ({...ab, index: i})).filter(ab => ab.currentCooldown === 0);
+    const prompt = `You are the AI for an enemy in a turn-based RPG.
+    Your character: ${JSON.stringify({name: enemy.name, hp: enemy.hp, attack: enemy.attack, defense: enemy.defense, abilities: enemy.abilities, statusEffects: enemy.statusEffects})}
+    Your opponent: ${JSON.stringify({name: player.name, hp: player.hp, defense: player.defense, isDefending: player.isDefending, statusEffects: player.statusEffects})}
+    
+    Available abilities you can use this turn (if any): ${JSON.stringify(availableAbilities)}
+    
+    Based on the situation, decide your action for THIS turn and your intent for the NEXT turn. Be strategic. If the player is defending, maybe apply a debuff. If you have a powerful ability off cooldown, use it.`;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: prompt,
+            config: { responseMimeType: "application/json", responseSchema: getEnemyActionAndIntentSchema, temperature: 1, thinkingConfig: { thinkingBudget: 0 } },
+        });
+        const result = JSON.parse(response.text);
+        
+        // Validate AI response
+        if (result.action === 'ability' && (result.abilityIndex < 0 || result.abilityIndex >= enemy.abilities.length || enemy.abilities[result.abilityIndex].currentCooldown > 0)) {
+           result.action = 'attack'; // Fallback to basic attack if AI chooses an invalid ability
+        }
+        
+        return result;
+    } catch (error) {
+        console.error("Error getting enemy action:", error);
+        return {
+            action: 'attack',
+            abilityIndex: -1,
+            nextTurnIntent: { type: 'attack', description: 'Preparing a basic assault.' }
+        };
+    }
+};
+
+export const generateCharacterImage = async (prompt: string): Promise<string> => {
+    try {
+        const response = await ai.models.generateImages({
+            model: 'imagen-4.0-generate-001', prompt,
+            config: { numberOfImages: 1, outputMimeType: 'image/jpeg', aspectRatio: '1:1', },
+        });
+        return `data:image/jpeg;base64,${response.generatedImages[0].image.imageBytes}`;
+    } catch (error) {
+        console.error("Error generating character image:", error);
+        return 'https://via.placeholder.com/512';
+    }
 };

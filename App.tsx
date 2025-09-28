@@ -1,143 +1,153 @@
+
 import React, { useState, useEffect } from 'react';
-import './App.css';
 import { useBattle } from './hooks/useBattle';
+import { generateCharacterImage } from './services/geminiService';
 import CharacterCard from './components/CharacterCard';
 import BattleLog from './components/BattleLog';
 import BattleControls from './components/BattleControls';
-import SettingsModal from './components/SettingsModal';
+import TurnOrderDisplay from './components/TurnOrderDisplay';
 import Shop from './components/Shop';
-import { SettingsIcon, ShopIcon, CoinIcon, PotionIcon, CodeBattleLogo } from './components/Icons';
+import SettingsModal from './components/SettingsModal';
+import { INITIAL_PLAYER_CHARACTER, PLAYER_IMAGE_PROMPT } from './constants';
 import { soundService } from './services/soundService';
+import { Volume2Icon, VolumeXIcon, CodeBattleLogo } from './components/Icons';
 
-const App: React.FC = () => {
+function App() {
   const {
     player,
     enemy,
+    setEnemy,
     battleLog,
-    isPlayerTurn,
-    gamePhase,
+    isBattleOver,
+    winner,
+    turnOrder,
+    activeCharacterName,
     isLoading,
-    isPlayerImageLoading,
-    isEnemyImageLoading,
-    actions,
-    startNewGame,
+    gamePhase,
+    startNewBattle,
+    handlePlayerAction,
+    purchaseItem,
+    // Fix: The useBattle hook does not take any arguments.
   } = useBattle();
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isShopOpen, setIsShopOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(soundService.getIsMuted());
 
+  // Generate enemy image when a new enemy is created by useBattle
   useEffect(() => {
-    if (gamePhase === 'battle' && !soundService.getIsMuted()) {
-        soundService.startMusic();
-    } else if (gamePhase === 'victory' || gamePhase === 'defeat') {
-        soundService.stopMusic();
+    if (enemy && !enemy.imageUrl && enemy.name !== 'Fallback Glitch' && !isLoading) {
+      // The enemy object from useBattle contains an imagePrompt
+      const enemyWithPrompt = enemy as any;
+      if (enemyWithPrompt.imagePrompt) {
+        generateCharacterImage(enemyWithPrompt.imagePrompt).then(imageUrl => {
+          setEnemy(e => e ? { ...e, imageUrl } : null);
+        });
+      }
     }
-    return () => {
-        soundService.stopMusic();
-    }
-  }, [gamePhase]);
+  }, [enemy, isLoading, setEnemy]);
 
-  const renderGamePhase = () => {
-    if (isLoading || !player) {
-      return (
-        <div className="loading-screen">
-          <h2>Loading Game Data...</h2>
+  const handleStartBattle = async () => {
+      const playerImageUrl = player.imageUrl || await generateCharacterImage(PLAYER_IMAGE_PROMPT);
+      await startNewBattle(playerImageUrl);
+  }
+
+  const toggleMute = () => {
+    const newMutedState = soundService.toggleMute();
+    setIsMuted(newMutedState);
+  };
+  
+  const renderGameContent = () => {
+    if (isLoading && gamePhase === 'BATTLE') {
+      return <div className="loading-screen">
+          <h2>Generating Next Challenger...</h2>
           <div className="spinner"></div>
-        </div>
+          <p>The Gemini AI is crafting a unique opponent for you.</p>
+          <p>Please wait, this may take a moment.</p>
+        </div>;
+    }
+
+    if (gamePhase === 'BATTLE' && enemy) {
+      return (
+        <>
+          <TurnOrderDisplay turnOrder={turnOrder} activeCharacterName={activeCharacterName} />
+          <div className="battle-arena">
+            <CharacterCard character={player} isPlayer={true} />
+            <div className="vs-text">VS</div>
+            <CharacterCard character={enemy} isPlayer={false} />
+          </div>
+          <BattleLog logs={battleLog} />
+          <BattleControls
+            player={player}
+            onAttack={() => handlePlayerAction('attack')}
+            onDefend={() => handlePlayerAction('defend')}
+            onAbility={(abilityIndex) => handlePlayerAction('ability', { abilityIndex })}
+            onUsePotion={() => handlePlayerAction('potion')}
+            isPlayerTurn={activeCharacterName === player.name}
+            isBattleOver={isBattleOver}
+          />
+        </>
       );
     }
     
-    if (gamePhase === 'start' && enemy === null) {
-        return (
-            <div className="loading-screen">
-              <h2>Compiling a Worthy Opponent...</h2>
-              <div className="spinner"></div>
-            </div>
-          );
-    }
-
-    if (gamePhase === 'victory' || gamePhase === 'defeat') {
-      const lastLog = battleLog[battleLog.length -1];
-      const xpLog = battleLog.find(log => log.message.includes("gained"));
-
-      return (
-        <div className="game-over-screen">
-          <h2>{gamePhase === 'victory' ? 'Victory!' : 'Defeat!'}</h2>
-          <p>{lastLog?.message}</p>
-          {gamePhase === 'victory' && xpLog && <p className="rewards">{xpLog.message}</p>}
-          <button onClick={startNewGame}>New Opponent</button>
-        </div>
-      );
-    }
-
-    if (!enemy) {
-        return (
-            <div className="loading-screen">
-              <h2>Initializing Battle Matrix...</h2>
-              <div className="spinner"></div>
-            </div>
-          );
-    }
-
+    // Pre-battle and Post-battle screen
     return (
-      <>
-        <div className="battle-arena">
-          <CharacterCard character={player} isPlayer={true} isLoadingImage={isPlayerImageLoading} isActive={isPlayerTurn} />
-          <div className="vs-text">VS</div>
-          <CharacterCard character={enemy} isLoadingImage={isEnemyImageLoading} isActive={!isPlayerTurn} />
+        <div className="game-hub">
+            {winner === 'player' && <h2 className="victory-title">Victory!</h2>}
+            {winner === 'enemy' && <h2 className="defeat-title">Defeat!</h2>}
+            
+            <div className="hub-player-card">
+              <CharacterCard character={{...player, hp: player.maxHp}} isPlayer={true} />
+            </div>
+
+            <div className="hub-controls">
+                <h3>Welcome, {player.name}</h3>
+                <p>XP: {player.xp} / {player.xpToNextLevel}</p>
+                <p>Coins: {player.coins}</p>
+                <p>Potions: {player.potions}</p>
+                <button onClick={handleStartBattle} className="battle-button" disabled={isLoading}>
+                    {isLoading ? 'Loading...' : (gamePhase === 'POST_BATTLE' ? 'Fight Next Opponent' : 'Start Battle')}
+                </button>
+                <button onClick={() => setIsShopOpen(true)} className="shop-button">
+                    Open Shop
+                </button>
+            </div>
         </div>
-        <BattleLog logs={battleLog} />
-        <BattleControls
-          onAttack={actions.attack}
-          onDefend={actions.defend}
-          onUseAbility={actions.useAbility}
-          onUsePotion={actions.usePotion}
-          player={player}
-          isPlayerTurn={isPlayerTurn}
-        />
-      </>
     );
   };
-  
+
   return (
     <div className="App">
       <header>
         <CodeBattleLogo />
-        <div className="player-stats">
-            <div className="stat-display">
-                <CoinIcon />
-                <span>{player?.coins ?? 0}</span>
-            </div>
-            <div className="stat-display">
-                <PotionIcon />
-                <span>{player?.potions ?? 0}</span>
-            </div>
-        </div>
-        <div className="header-buttons">
-            <button onClick={() => setIsShopOpen(true)} className="header-icon-button" aria-label="Open Shop">
-                <ShopIcon />
-            </button>
-            <button onClick={() => setIsSettingsOpen(true)} className="header-icon-button" aria-label="Open Settings">
-                <SettingsIcon />
+        <div className="header-controls">
+            <button onClick={() => setIsSettingsOpen(true)} className="icon-button" aria-label="Settings">⚙️</button>
+            <button onClick={toggleMute} className="icon-button" aria-label="Toggle Sound">
+                {isMuted ? <VolumeXIcon /> : <Volume2Icon />}
             </button>
         </div>
       </header>
       <main>
-        {renderGamePhase()}
+        {renderGameContent()}
       </main>
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
-      {player && (
-          <Shop 
-            isOpen={isShopOpen} 
-            onClose={() => setIsShopOpen(false)}
-            playerCoins={player.coins}
-            onBuyPotion={actions.buyPotion}
-            onBuyAttack={actions.buyAttack}
-            onBuyDefense={actions.buyDefense}
-          />
-      )}
+      <Shop 
+        isOpen={isShopOpen} 
+        onClose={() => setIsShopOpen(false)} 
+        playerCoins={player.coins}
+        onBuyPotion={() => purchaseItem('potion')}
+        onBuyAttack={() => purchaseItem('attack')}
+        onBuyDefense={() => purchaseItem('defense')}
+      />
+      <SettingsModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => {
+            setIsSettingsOpen(false);
+            // Resync mute state from service when modal closes
+            setIsMuted(soundService.getIsMuted());
+        }} 
+      />
     </div>
   );
-};
+}
 
 export default App;

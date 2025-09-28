@@ -1,80 +1,39 @@
 import React from 'react';
 
-// New Logo
 export const CodeBattleLogo: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <div style={{ fontFamily: "'Russo One', sans-serif", fontSize: '2rem', display: 'flex', alignItems: 'center' }}>
-        <span style={{ color: '#00f6ff' }}>{'<'}</span>
-        <span style={{ color: '#f8f8f8' }}>Code</span>
-        <span style={{ color: '#ff00ff' }}>Battle</span>
-        <span style={{ color: '#00f6ff' }}>{'>'}</span>
-    </div>
-);
-
-
-export const Volume2Icon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
-  </svg>
-);
-
-export const VolumeXIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-    <line x1="23" y1="9" x2="17" y2="15"></line>
-    <line x1="17" y1="9" x2="23" y2="15"></line>
-  </svg>
-);
-
-export const SettingsIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 0 2l-.15.08a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 0-2l.15-.08a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-      <circle cx="12" cy="12" r="3"></circle>
+    <svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <style>
+            {`
+            .codebattle-c { fill: url(#grad1); animation: glow 2s ease-in-out infinite alternate; }
+            .codebattle-b { fill: url(#grad2); animation: glow 2s ease-in-out infinite alternate; animation-delay: 0.5s; }
+            @keyframes glow {
+                from { filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 5px #0ff) drop-shadow(0 0 10px #0ff); }
+                to { filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 10px #f0f) drop-shadow(0 0 15px #f0f); }
+            }
+            `}
+        </style>
+        <defs>
+            <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{stopColor: '#00FFFF'}} />
+                <stop offset="100%" style={{stopColor: '#00BFFF'}} />
+            </linearGradient>
+            <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{stopColor: '#FF00FF'}} />
+                <stop offset="100%" style={{stopColor: '#FF69B4'}} />
+            </linearGradient>
+        </defs>
+        <text x="5" y="40" fontFamily="'Russo One', sans-serif" fontSize="40" className="codebattle-c">Code</text>
+        <text x="100" y="40" fontFamily="'Russo One', sans-serif" fontSize="40" className="codebattle-b">Battle</text>
     </svg>
 );
 
-export const ShopIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <path d="M16 10a4 4 0 0 1-8 0"></path>
-    </svg>
-);
+export const Volume2Icon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" > <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /> <path d="M15.54 8.46a5 5 0 0 1 0 7.07" /> <path d="M19.07 4.93a10 10 0 0 1 0 14.14" /> </svg> );
+export const VolumeXIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" > <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" /> <line x1="23" x2="17" y1="9" y2="15" /> <line x1="17" x2="23" y1="9" y2="15" /> </svg> );
+export const CoinIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="gold" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" > <circle cx="12" cy="12" r="8"></circle> <path d="M12 16v-4"></path> <path d="M12 8h.01"></path> <path d="M15 13.5c-1-1-2-1.5-3-1.5s-2 .5-3 1.5"></path> </svg> );
+export const PotionIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" > <path d="M12 5C10.8954 5 10 5.89543 10 7V10H14V7C14 5.89543 13.1046 5 12 5Z" /> <path d="M10 10C8.34315 10 7 11.3431 7 13C7 15.2091 8.79086 17 11 17H13C15.2091 17 17 15.2091 17 13C17 11.3431 15.6569 10 14 10H10Z" /> <path d="M12 17V19" /> <path d="M9 19H15" /> </svg> );
 
-export const CoinIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <circle cx="12" cy="12" r="8"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12" y2="8"></line>
-    </svg>
-);
-
-export const PotionIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-        <line x1="12" y1="8" x2="12" y2="16"></line>
-        <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-);
-
-// Status Effect Icons
-export const StunIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="m3.5 16.5 4-4L2 6.5l8 8 6-6-4 4"></path>
-    </svg>
-);
-
-export const WeakenIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"></path>
-        <path d="m12 14-4-4"></path><path d="m16 10-4 4"></path>
-    </svg>
-);
-
-export const CorrosionIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-        <path d="M12 4.2C8.5 4.2 2 7.7 2 12.5S8.5 21 12 21s10-4.5 10-9.3-6.5-8.3-10-8.3Z"></path>
-        <path d="M12 6c-1.93 0-3.5 1.57-3.5 3.5S10.07 13 12 13s3.5-1.57 3.5-3.5S13.93 6 12 6Z"></path>
-    </svg>
-);
+// Intent Icons
+export const SwordIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="M21.5 3.5-3.5 21.5"/> <path d="m16 8 3 3"/> <path d="M17.5 12.5 10 20"/> <path d="M5 19 2 22"/> <path d="m18 11 1 1"/> <path d="M21 3 12 12"/> </svg> );
+export const HeavyAttackIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="m14.5 2.5-3 3"/> <path d="m20 8-3-3"/> <path d="M11 13 3 21"/> <path d="M21 3 3 21"/> <path d="m15 12-3.5 3.5"/> </svg> );
+export const ShieldIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/> </svg> );
+export const DebuffIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => ( <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"> <path d="M12 2v4"/> <path d="M12 18v4"/> <path d="m4.93 4.93 2.83 2.83"/> <path d="m16.24 16.24 2.83 2.83"/> <path d="M2 12h4"/> <path d="M18 12h4"/> <path d="m4.93 19.07 2.83-2.83"/> <path d="m16.24 7.76 2.83-2.83"/> </svg> );

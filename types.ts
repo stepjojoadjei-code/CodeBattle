@@ -1,20 +1,33 @@
+export interface StatusEffect {
+  type: 'Stun' | 'Corrosion' | 'Weaken';
+  duration: number;
+}
+
 export interface Ability {
   name: string;
   description: string;
   damage: number; // Can be negative for healing
-  cooldown: number; // Turns to wait after use
+  cooldown: number;
   currentCooldown: number;
-  // New: status effect applied by the ability
   statusEffect?: {
-    type: 'Stun' | 'Corrosion' | 'Weaken';
-    chance: number; // 0 to 1
-    duration: number; // in turns
+    type: StatusEffect['type'];
+    chance: number;
+    duration: number;
   };
 }
 
-export interface StatusEffect {
-    type: 'Stun' | 'Corrosion' | 'Weaken';
-    turns: number;
+export type EnemyIntentType = 'attack' | 'heavy_attack' | 'defend' | 'debuff';
+
+export interface EnemyIntent {
+    type: EnemyIntentType;
+    description: string;
+}
+
+export interface DamageInfo {
+    amount: number;
+    isCritical: boolean;
+    type: 'damage' | 'heal' | 'corrosion';
+    id: number; // To trigger re-renders
 }
 
 export interface Character {
@@ -24,30 +37,23 @@ export interface Character {
   attack: number;
   defense: number;
   speed: number;
-  abilities: Ability[];
   isDefending: boolean;
-  imageUrl?: string;
-  // New: track status effects
   statusEffects: StatusEffect[];
-  // Progression
+  abilities: Ability[];
+  // Progression & Items
   level: number;
   xp: number;
   xpToNextLevel: number;
-  // Economy & Items
   coins: number;
   potions: number;
+  // Visuals & AI
+  imageUrl: string;
+  currentIntent?: EnemyIntent | null;
+  lastDamage?: DamageInfo | null;
 }
 
 export interface BattleLogEntry {
   turn: number;
   message: string;
-  isCritical?: boolean; // New: flag for crits
+  isCritical?: boolean;
 }
-
-export interface AIAction {
-    action: 'attack' | 'defend' | 'use_ability';
-    abilityName?: string;
-    narration: string;
-}
-
-export type GamePhase = 'start' | 'battle' | 'victory' | 'defeat';

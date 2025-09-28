@@ -1,52 +1,60 @@
 import React from 'react';
-import { Ability, Character } from '../types';
+import { Character } from '../types';
 import { PotionIcon } from './Icons';
+import { POTION_HEAL_AMOUNT } from '../constants';
 
 interface BattleControlsProps {
+  player: Character;
   onAttack: () => void;
   onDefend: () => void;
-  onUseAbility: (ability: Ability) => void;
+  onAbility: (abilityIndex: number) => void;
   onUsePotion: () => void;
-  player: Character;
   isPlayerTurn: boolean;
+  isBattleOver: boolean;
 }
 
 const BattleControls: React.FC<BattleControlsProps> = ({
+  player,
   onAttack,
   onDefend,
-  onUseAbility,
+  onAbility,
   onUsePotion,
-  player,
   isPlayerTurn,
+  isBattleOver,
 }) => {
-  const isDisabled = !isPlayerTurn;
+  const canAct = isPlayerTurn && !isBattleOver;
 
   return (
     <div className="battle-controls">
-      <button onClick={onAttack} disabled={isDisabled}>
-        Attack
-      </button>
-      <button onClick={onDefend} disabled={isDisabled}>
-        Defend
-      </button>
-      {player.abilities.map((ability) => (
-        <button
-          key={ability.name}
-          onClick={() => onUseAbility(ability)}
-          disabled={isDisabled || ability.currentCooldown > 0}
-          className="ability-button"
-        >
-          {ability.name}
-          {ability.currentCooldown > 0 && ` (${ability.currentCooldown})`}
+      <div className="action-buttons">
+        <button onClick={onAttack} disabled={!canAct}>
+          Attack
         </button>
-      ))}
-      <button 
-        onClick={onUsePotion} 
-        disabled={isDisabled || player.potions <= 0} 
-        className="potion-button"
-      >
-        <PotionIcon /> Use Potion ({player.potions})
-      </button>
+        <button onClick={onDefend} disabled={!canAct}>
+          Defend
+        </button>
+        <button onClick={onUsePotion} disabled={!canAct || player.potions <= 0 || player.hp === player.maxHp}>
+          <PotionIcon /> Use Potion ({player.potions})
+          <span className="tooltip">Heals {POTION_HEAL_AMOUNT} HP</span>
+        </button>
+      </div>
+      <div className="ability-buttons">
+        {player.abilities.map((ability, index) => (
+          <button
+            key={ability.name}
+            onClick={() => onAbility(index)}
+            disabled={!canAct || ability.currentCooldown > 0}
+            className="ability-button"
+          >
+            {ability.name}
+            {ability.currentCooldown > 0 ? (
+              <span className="cooldown-timer">({ability.currentCooldown})</span>
+            ) : (
+              <span className="tooltip">{ability.description}</span>
+            )}
+          </button>
+        ))}
+      </div>
     </div>
   );
 };

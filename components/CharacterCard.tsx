@@ -1,93 +1,106 @@
-import React from 'react';
-import { Character } from '../types';
-import { StunIcon, WeakenIcon, CorrosionIcon } from './Icons';
+import React, { useState, useEffect } from 'react';
+import { Character, StatusEffect, DamageInfo, EnemyIntentType } from '../types';
+import { SwordIcon, ShieldIcon, DebuffIcon, HeavyAttackIcon } from './Icons'; // Assuming these are created
 
 interface CharacterCardProps {
   character: Character;
-  isPlayer?: boolean;
-  isLoadingImage?: boolean;
-  isActive?: boolean;
+  isPlayer: boolean;
 }
 
-const HealthBar: React.FC<{ current: number; max: number, type: 'hp' | 'xp' }> = ({ current, max, type }) => {
-  const percentage = max > 0 ? (current / max) * 100 : 0;
-  
-  const barClass = type === 'hp' ? 'hp-bar' : 'xp-bar';
-  const fillColor = type === 'hp'
-    ? (percentage > 60 ? 'fill-hp-high' : percentage > 30 ? 'fill-hp-medium' : 'fill-hp-low')
-    : 'fill-xp';
-
-
-  return (
-    <div className={`w-full bg-black/50 rounded-full h-4 overflow-hidden border-2 border-black/30 ${barClass}`}>
-      <div
-        className={`h-full rounded-full transition-all duration-500 ${fillColor}`}
-        style={{ width: `${percentage}%` }}
-      />
-    </div>
-  );
+const getIntentIcon = (type: EnemyIntentType) => {
+    switch (type) {
+        case 'attack': return <SwordIcon />;
+        case 'heavy_attack': return <HeavyAttackIcon />;
+        case 'defend': return <ShieldIcon />;
+        case 'debuff': return <DebuffIcon />;
+        default: return null;
+    }
 };
 
-const StatusEffectIcons: React.FC<{ character: Character }> = ({ character }) => {
-    if (!character.statusEffects || character.statusEffects.length === 0) return null;
-
-    return (
-        <div className="status-effects-container">
-            {character.statusEffects.map((effect, index) => {
-                let IconComponent;
-                switch(effect.type) {
-                    case 'Stun': IconComponent = StunIcon; break;
-                    case 'Weaken': IconComponent = WeakenIcon; break;
-                    case 'Corrosion': IconComponent = CorrosionIcon; break;
-                    default: return null;
-                }
-                return (
-                    <div key={index} className="status-icon" title={`${effect.type} - ${effect.turns} turns left`}>
-                        <IconComponent />
-                        <span>{effect.turns}</span>
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
-
-
-const CharacterCard: React.FC<CharacterCardProps> = ({ character, isPlayer = false, isLoadingImage = false, isActive = false }) => {
-  if (!character) {
-    return (
-        <div className={`character-card ${isPlayer ? 'player-card' : 'enemy-card'}`}>
-            <div className="character-image-placeholder animate-pulse"></div>
-        </div>
-    );
+const getStatusEffectData = (effectType: StatusEffect['type']) => {
+  switch (effectType) {
+    case 'Stun': return { icon: '😵', description: 'Cannot act on the next turn.' };
+    case 'Corrosion': return { icon: '☠️', description: 'Takes damage over time.' };
+    case 'Weaken': return { icon: '📉', description: 'Deals reduced damage.' };
+    default: return { icon: '❓', description: 'An unknown effect.' };
   }
+};
 
-  const { name, hp, maxHp, imageUrl, level, xp, xpToNextLevel } = character;
+const CharacterCard: React.FC<CharacterCardProps> = ({ character, isPlayer }) => {
+  const hpPercentage = character.maxHp > 0 ? (character.hp / character.maxHp) * 100 : 0;
+  const xpPercentage = isPlayer && character.xpToNextLevel > 0 ? (character.xp / character.xpToNextLevel) * 100 : 0;
+  
+  const [floatingNumbers, setFloatingNumbers] = useState<DamageInfo[]>([]);
+
+  useEffect(() => {
+    if (character.lastDamage) {
+      setFloatingNumbers(prev => [...prev, character.lastDamage!]);
+      const timer = setTimeout(() => {
+        setFloatingNumbers(prev => prev.slice(1));
+      }, 2000); // Corresponds to animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [character.lastDamage]);
 
   return (
-    <div className={`character-card ${isPlayer ? 'player-card' : 'enemy-card'} ${isActive ? 'active-turn' : ''}`}>
+    <div className={`character-card ${isPlayer ? 'player-card' : 'enemy-card'}`}>
       <div className="character-image-container">
-        {isLoadingImage ? (
-            <div className="character-image-placeholder animate-pulse"></div>
+        {character.imageUrl ? (
+          <img src={character.imageUrl} alt={character.name} className="character-image" />
         ) : (
-            <img src={imageUrl} alt={name} className="character-image" />
+          <div className="character-image-placeholder"><div className="spinner"></div></div>
         )}
+        <div className="floating-numbers-container">
+            {floatingNumbers.map((num) => (
+                <div key={num.id} className={`floating-number ${num.type} ${num.isCritical ? 'critical' : ''}`}>
+                    {num.type === 'heal' ? `+${num.amount}` : num.amount}
+                </div>
+            ))}
+        </div>
       </div>
       <div className="character-info">
-        <h3>{name} {isPlayer && `(Lvl ${level})`}</h3>
-        <HealthBar current={hp} max={maxHp} type="hp" />
-        <p className="hp-text">{hp} / {maxHp}</p>
+        <div className="card-header">
+            <h3>{character.name} {isPlayer && `(Lvl ${character.level})`}</h3>
+            {!isPlayer && character.currentIntent && (
+                <div className="enemy-intent tooltip-container">
+                    {getIntentIcon(character.currentIntent.type)}
+                    <span className="tooltip">{character.currentIntent.description}</span>
+                </div>
+            )}
+        </div>
+
+        <div className="hp-bar-container">
+          <div className="hp-bar" style={{ width: `${hpPercentage}%` }}></div>
+          <span className="hp-text">{character.hp} / {character.maxHp}</span>
+        </div>
         {isPlayer && (
-          <div className="xp-bar-container">
-            <HealthBar current={xp} max={xpToNextLevel} type="xp" />
-            <p className="xp-text">XP: {xp} / {xpToNextLevel}</p>
-          </div>
+            <div className="xp-bar-container">
+                <div className="xp-bar" style={{ width: `${xpPercentage}%` }}></div>
+                <span className="xp-text">XP: {character.xp} / {character.xpToNextLevel}</span>
+            </div>
         )}
-      </div>
-      <StatusEffectIcons character={character} />
-      <div className="stats-display">
-        <p>ATK: {character.attack}</p>
-        <p>DEF: {character.defense}</p>
+        <div className="stats-grid">
+          <span>ATK: {character.attack}</span>
+          <span>DEF: {character.defense}</span>
+          <span>SPD: {character.speed}</span>
+        </div>
+        <div className="status-effects">
+          {character.statusEffects.map((effect, index) => {
+            const { icon, description } = getStatusEffectData(effect.type);
+            return (
+                <div key={index} className="status-icon tooltip-container">
+                    <span>{icon}</span>
+                    <span className="tooltip">{`${effect.type} (${effect.duration} turns left): ${description}`}</span>
+                </div>
+            );
+          })}
+          {character.isDefending && (
+            <div className="status-icon tooltip-container">
+                <span>🛡️</span>
+                <span className="tooltip">Defending: Takes 50% reduced damage until next turn.</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,265 @@
+:root {
+  --background-start: #0f0c29;
+  --background-mid: #302b63;
+  --background-end: #24243e;
+  --glow-cyan: #00f6ff;
+  --glow-magenta: #ff00ff;
+  --text-color: #f8f8f8;
+  --glass-bg: rgba(22, 22, 35, 0.4);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --font-family-title: 'Russo One', sans-serif;
+  --font-family-body: 'Poppins', sans-serif;
+}
+
+body {
+  color: var(--text-color);
+  font-family: var(--font-family-body);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(-45deg, var(--background-start), var(--background-mid), var(--background-end));
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+	0% { background-position: 0% 50%; }
+	50% { background-position: 100% 50%; }
+	100% { background-position: 0% 50%; }
+}
+
+.App {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  text-align: center;
+}
+
+header {
+  padding: 1rem 2rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-buttons, .player-stats {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    background-color: rgba(0,0,0,0.3);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+}
+
+.stat-display svg { color: var(--glow-cyan); }
+.stat-display span { color: var(--text-color); }
+
+.header-icon-button {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  cursor: pointer;
+  padding: 0.5rem;
+  transition: color 0.2s, transform 0.2s;
+}
+.header-icon-button:hover {
+  color: var(--glow-magenta);
+  transform: scale(1.1);
+}
+
+main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}
+
+.loading-screen, .game-over-screen {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  padding: 3rem;
+  border-radius: 20px;
+}
+
+.loading-screen h2, .game-over-screen h2 {
+  font-family: var(--font-family-title);
+  font-size: 3rem;
+  color: var(--text-color);
+  text-shadow: 0 0 10px var(--glow-cyan), 0 0 20px var(--glow-magenta);
+}
+
+.game-over-screen button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1.2rem;
+  background: linear-gradient(45deg, var(--glow-magenta), var(--glow-cyan));
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: var(--font-family-title);
+  color: #fff;
+  transition: transform 0.2s;
+}
+.game-over-screen button:hover { transform: scale(1.05); }
+.game-over-screen .rewards { font-style: italic; color: var(--glow-cyan); }
+
+.spinner { /* same */ }
+
+.battle-arena {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 900px;
+  margin-bottom: 1rem;
+}
+
+.vs-text {
+  font-family: var(--font-family-title);
+  font-size: 4rem;
+  color: #fff;
+  align-self: center;
+  text-shadow: 0 0 15px var(--glow-magenta);
+}
+
+.character-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 1rem;
+  width: 300px;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+
+.character-card.active-turn {
+    transform: translateY(-10px);
+    box-shadow: 0 0 20px var(--glow-cyan), 0 0 30px var(--glow-cyan);
+}
+
+
+.character-image-container {
+    width: 100%;
+    height: 250px;
+    background-color: #000;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--glass-border);
+}
+/* ... */
+.character-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-family: var(--font-family-title);
+  color: #fff;
+}
+
+.hp-bar.fill-hp-high { background-color: var(--glow-cyan); }
+.hp-bar.fill-hp-medium { background-color: #f9d71c; }
+.hp-bar.fill-hp-low { background-color: var(--glow-magenta); }
+.xp-bar .fill-xp { background-color: #a855f7; }
+
+.status-effects-container {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    height: 28px;
+}
+.status-icon {
+    display: flex;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    padding: 2px 6px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+.status-icon svg { width: 16px; height: 16px; margin-right: 4px; }
+.status-icon[title*="Stun"] { color: #facc15; }
+.status-icon[title*="Weaken"] { color: #a855f7; }
+.status-icon[title*="Corrosion"] { color: #4ade80; }
+
+
+.battle-log {
+  width: 100%;
+  max-width: 800px;
+  height: 150px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(5px);
+  border-radius: 10px;
+  padding: 1rem;
+  overflow-y: auto;
+  border: 1px solid var(--glass-border);
+  margin-bottom: 1rem;
+  text-align: left;
+}
+.turn-number { font-weight: bold; color: var(--glow-cyan); }
+.log-critical { font-weight: bold; color: var(--glow-magenta); animation: pulse 0.5s; }
+.log-levelup { color: #fde047; font-weight: bold; }
+.log-reward { color: var(--glow-cyan); font-style: italic; }
+.log-heal { color: #4ade80; }
+.log-status-stun { color: #facc15; }
+.log-status-weaken { color: #c084fc; }
+.log-status-corrosion { color: #86efac; }
+
+
+.battle-controls button {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  border: 1px solid var(--glass-border);
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: var(--glass-bg);
+  color: var(--text-color);
+  font-family: var(--font-family-title);
+  transition: all 0.2s;
+}
+.battle-controls button:hover:not(:disabled) {
+  background-color: var(--glow-cyan);
+  color: #111;
+  box-shadow: 0 0 15px var(--glow-cyan);
+}
+.battle-controls .ability-button:hover:not(:disabled) {
+    background-color: var(--glow-magenta);
+    box-shadow: 0 0 15px var(--glow-magenta);
+}
+
+.modal-overlay { /* same */ }
+
+.modal-content {
+  background: var(--glass-bg);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  padding: 2rem;
+  border-radius: 15px;
+  border: 1px solid var(--glass-border);
+  width: 90%;
+  max-width: 500px;
+}
+/* ... rest of the styles are similar but adapted to the new theme ... */
+.shop-item button {
+    background: linear-gradient(45deg, #a855f7, #6366f1);
+    /* ... */
+}

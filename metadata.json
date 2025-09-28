@@ -1,0 +1,5 @@
+{
+  "name": "CodeBattle",
+  "description": "A turn-based RPG where you battle unique, AI-generated enemies in a vibrant synthwave arena. Level up, earn coins, buy upgrades in the shop, and master strategic combat with critical hits and status effects.",
+  "requestFramePermissions": []
+}
